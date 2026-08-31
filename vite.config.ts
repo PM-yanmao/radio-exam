@@ -31,4 +31,8 @@ function injectCsp(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), injectCsp()],
+  build: {
+    // 降低 JS 语法目标，兼容更老的浏览器；新浏览器不受影响
+    target: 'es2015',
+  },
 })
