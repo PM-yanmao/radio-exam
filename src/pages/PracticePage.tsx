@@ -11,8 +11,10 @@ import {
   ListOrdered,
   RotateCcw,
   Shuffle,
+  Sparkles,
   XCircle,
 } from 'lucide-react'
+import AiChatDialog from '../components/AiChatDialog'
 import { getClass, questionData } from '../data'
 import { isAnswerCorrect } from '../lib/quiz'
 import { recordAnswer, wrongStore } from '../lib/storage'
@@ -48,6 +50,7 @@ export default function PracticePage() {
   const [checks, setChecks] = useState<Record<string, boolean>>({})
   const [finished, setFinished] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
 
   useEffect(() => {
     const n = baseQuestions.length
@@ -57,6 +60,7 @@ export default function PracticePage() {
     setChecks({})
     setFinished(false)
     setSheetOpen(false)
+    setAiOpen(false)
     setOrder(
       urlMode === 'shuffle'
         ? [Math.floor(Math.random() * Math.max(n, 1))]
@@ -217,6 +221,13 @@ export default function PracticePage() {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            onClick={() => setAiOpen(true)}
+            className="flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-100"
+            title="AI 解析"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> AI
+          </button>
           <div className="flex rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
             <button
               onClick={() => switchMode('seq')}
@@ -442,6 +453,8 @@ export default function PracticePage() {
           </div>
         )}
       </div>
+
+      {aiOpen && <AiChatDialog question={q} onClose={() => setAiOpen(false)} />}
     </div>
   )
 }
