@@ -474,8 +474,8 @@ export default function PracticePage() {
           <div
             className={
               sheetStyle === 'scroll'
-                ? 'thin-scroll mt-3 flex max-h-56 flex-wrap gap-1.5 overflow-y-auto pr-2'
-                : 'mt-3 flex flex-wrap gap-1.5'
+                ? 'thin-scroll mt-3 flex max-h-56 flex-wrap gap-1.5 overflow-y-auto p-1 pr-2'
+                : 'mt-3 flex flex-wrap gap-1.5 p-1'
             }
           >
             {baseQuestions.map((qq, bi) => {
