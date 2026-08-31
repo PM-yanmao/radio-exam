@@ -1,5 +1,6 @@
 import { Settings } from 'lucide-react'
 import AiConfigPanel from '../components/AiConfigPanel'
+import SheetStylePanel from '../components/SheetStylePanel'
 
 export default function AiConfigPage() {
   return (
@@ -15,6 +16,7 @@ export default function AiConfigPage() {
       </header>
 
       <AiConfigPanel />
+      <SheetStylePanel />
     </div>
   )
 }

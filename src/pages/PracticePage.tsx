@@ -17,6 +17,7 @@ import {
 import AiChatDialog from '../components/AiChatDialog'
 import { getClass, questionData } from '../data'
 import { isAnswerCorrect } from '../lib/quiz'
+import { getSheetStyle, type SheetStyle } from '../lib/settings'
 import { recordAnswer, wrongStore } from '../lib/storage'
 import type { ClassKey, Question } from '../types'
 
@@ -49,7 +50,10 @@ export default function PracticePage() {
   const [answers, setAnswers] = useState<Record<string, number[]>>({})
   const [checks, setChecks] = useState<Record<string, boolean>>({})
   const [finished, setFinished] = useState(false)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(true)
+  const [sheetStyle, setSheetStyleState] = useState<SheetStyle>(() => getSheetStyle())
+  const [jumpInput, setJumpInput] = useState('')
+  const [jumpError, setJumpError] = useState<string | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
 
   useEffect(() => {
@@ -59,7 +63,10 @@ export default function PracticePage() {
     setAnswers({})
     setChecks({})
     setFinished(false)
-    setSheetOpen(false)
+    setSheetOpen(true)
+    setSheetStyleState(getSheetStyle())
+    setJumpInput('')
+    setJumpError(null)
     setAiOpen(false)
     setOrder(
       urlMode === 'shuffle'
@@ -142,6 +149,17 @@ export default function PracticePage() {
       setOrder((prev) => [...prev, baseIndex])
       setIndex(order.length)
     }
+  }
+
+  function jumpToNumber() {
+    const n = Number(jumpInput)
+    if (!Number.isInteger(n) || n < 1 || n > total) {
+      setJumpError(`请输入 1-${total} 之间的题号`)
+      return
+    }
+    setJumpError(null)
+    setSheetOpen(true)
+    jumpTo(n - 1)
   }
 
   function reviewQuestion(id: string) {
@@ -392,7 +410,7 @@ export default function PracticePage() {
       </div>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold text-slate-500">答题卡</p>
             {!sheetOpen && (
@@ -401,7 +419,28 @@ export default function PracticePage() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <input
+                value={jumpInput}
+                onChange={(e) => {
+                  setJumpInput(e.target.value.replace(/\D/g, ''))
+                  setJumpError(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') jumpToNumber()
+                }}
+                placeholder="题号"
+                inputMode="numeric"
+                className="w-16 rounded-lg border border-slate-200 px-2 py-1 text-center text-xs outline-none transition-colors focus:border-indigo-400"
+              />
+              <button
+                onClick={jumpToNumber}
+                className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-100"
+              >
+                跳转
+              </button>
+            </div>
             <button
               onClick={restart}
               className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -430,8 +469,15 @@ export default function PracticePage() {
             </button>
           </div>
         </div>
+        {jumpError && <p className="mt-1 text-right text-xs text-rose-500">{jumpError}</p>}
         {sheetOpen && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
+          <div
+            className={
+              sheetStyle === 'scroll'
+                ? 'thin-scroll mt-3 flex max-h-56 flex-wrap gap-1.5 overflow-y-auto pr-2'
+                : 'mt-3 flex flex-wrap gap-1.5'
+            }
+          >
             {baseQuestions.map((qq, bi) => {
               const checked = checks[qq.id]
               const isCurrent = bi === order[index]
