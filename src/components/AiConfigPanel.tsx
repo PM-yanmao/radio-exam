@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Eye, EyeOff, KeyRound, Save, ShieldCheck } from 'lucide-react'
-import { AI_API_PRESETS, AI_MODEL_PRESETS } from '../lib/ai'
+import { Eye, EyeOff, KeyRound, RefreshCw, Save, ShieldCheck } from 'lucide-react'
+import { AI_API_PRESETS, fetchModels } from '../lib/ai'
 import { clearAIConfig, isAIConfiguredSync, loadAIConfig, saveAIConfig } from '../lib/aiConfig'
 
 export default function AiConfigPanel() {
@@ -12,6 +12,8 @@ export default function AiConfigPanel() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [models, setModels] = useState<string[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -21,12 +23,33 @@ export default function AiConfigPanel() {
         setApiUrl(cfg.apiUrl)
         setModel(cfg.model)
         setConfigured(true)
+        void loadModels(cfg.apiUrl, cfg.apiKey)
       }
     })
     return () => {
       alive = false
     }
   }, [])
+
+  async function loadModels(url: string, key: string) {
+    if (!url.trim() || !key.trim()) {
+      setError('请先填写 API 地址和 API Key')
+      return
+    }
+    setLoadingModels(true)
+    setError(null)
+    try {
+      const list = await fetchModels(url, key)
+      setModels(list)
+      if (list.length === 1) setModel(list[0])
+      setMessage(`已获取 ${list.length} 个模型，可从下拉列表选择或手动输入`)
+    } catch (e) {
+      console.error(e)
+      setError(e instanceof Error ? e.message : '获取模型列表失败')
+    } finally {
+      setLoadingModels(false)
+    }
+  }
 
   async function handleSave() {
     setMessage(null)
@@ -94,18 +117,33 @@ export default function AiConfigPanel() {
 
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-600">模型</label>
-          <input
-            list="ai-model-presets"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            placeholder="选择或输入模型名称"
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-          />
-          <datalist id="ai-model-presets">
-            {AI_MODEL_PRESETS.map((m) => (
+          <div className="flex gap-2">
+            <input
+              list="ai-model-options"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="点击右侧按钮获取模型列表，或手动输入"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+            <button
+              type="button"
+              onClick={() => loadModels(apiUrl, apiKey)}
+              disabled={loadingModels}
+              className="flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50"
+              title="从 API 获取最新模型列表"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loadingModels ? 'animate-spin' : ''}`} />
+              获取模型
+            </button>
+          </div>
+          <datalist id="ai-model-options">
+            {models.map((m) => (
               <option key={m} value={m} />
             ))}
           </datalist>
+          <p className="mt-1 text-xs text-slate-400">
+            模型列表来自 API 的 /models 接口实时获取，也可手动输入
+          </p>
         </div>
 
         <div>

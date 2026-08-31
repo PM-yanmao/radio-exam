@@ -14,16 +14,42 @@ export const AI_API_PRESETS: { name: string; url: string }[] = [
   { name: 'SiliconFlow', url: 'https://api.siliconflow.cn/v1' },
 ]
 
-export const AI_MODEL_PRESETS: string[] = [
-  'gpt-4o-mini',
-  'gpt-4o',
-  'deepseek-v4-flash',
-  'deepseek-v4-pro',
-  'deepseek-v4-flash-vision-exp',
-  'moonshot-v1-8k',
-  'glm-4-flash',
-  'qwen-turbo',
-]
+/** 实时从 OpenAI 兼容的 /models 接口获取模型列表 */
+export async function fetchModels(apiUrl: string, apiKey: string): Promise<string[]> {
+  const base = apiUrl.trim().replace(/\/+$/, '')
+  let res: Response
+  try {
+    res = await fetch(`${base}/models`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+  } catch (e) {
+    console.error('获取模型列表网络请求失败', e)
+    throw new Error('网络连接失败，请检查 API 地址')
+  }
+
+  if (!res.ok) {
+    let detail = ''
+    try {
+      const data = await res.json()
+      detail = data?.error?.message || JSON.stringify(data)
+    } catch {
+      detail = await res.text().catch(() => '')
+    }
+    console.error(`获取模型列表失败（HTTP ${res.status}）`, detail)
+    throw new Error(`获取模型列表失败（HTTP ${res.status}）`)
+  }
+
+  const data = await res.json()
+  const ids: string[] = (data?.data ?? [])
+    .map((item: { id?: unknown }) => (typeof item?.id === 'string' ? item.id : ''))
+    .filter((id: string) => id.trim() !== '')
+  if (ids.length === 0) {
+    console.error('获取模型列表返回为空', data)
+    throw new Error('未获取到可用模型，请手动输入')
+  }
+  return ids
+}
 
 export class AINotConfiguredError extends Error {
   constructor() {
