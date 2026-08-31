@@ -7,6 +7,7 @@ export default function AiConfigPanel() {
   const [apiUrl, setApiUrl] = useState('')
   const [model, setModel] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [storedKey, setStoredKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [configured, setConfigured] = useState(isAIConfiguredSync())
   const [saving, setSaving] = useState(false)
@@ -23,6 +24,7 @@ export default function AiConfigPanel() {
         setApiUrl(cfg.apiUrl)
         setModel(cfg.model)
         setConfigured(true)
+        setStoredKey(cfg.apiKey)
         void loadModels(cfg.apiUrl, cfg.apiKey)
       }
     })
@@ -32,14 +34,15 @@ export default function AiConfigPanel() {
   }, [])
 
   async function loadModels(url: string, key: string) {
-    if (!url.trim() || !key.trim()) {
+    const effectiveKey = key.trim() || storedKey
+    if (!url.trim() || !effectiveKey) {
       setError('请先填写 API 地址和 API Key')
       return
     }
     setLoadingModels(true)
     setError(null)
     try {
-      const list = await fetchModels(url, key)
+      const list = await fetchModels(url, effectiveKey)
       setModels(list)
       if (list.length === 1) setModel(list[0])
       setMessage(`已获取 ${list.length} 个模型，可从下拉列表选择或手动输入`)
@@ -56,7 +59,8 @@ export default function AiConfigPanel() {
     setError(null)
     const url = apiUrl.trim()
     const mdl = model.trim()
-    if (!url || !mdl || !apiKey.trim()) {
+    const key = apiKey.trim() || storedKey
+    if (!url || !mdl || !key) {
       setError('请完整填写 API 地址、模型名称和 API Key')
       return
     }
@@ -66,8 +70,9 @@ export default function AiConfigPanel() {
     }
     setSaving(true)
     try {
-      await saveAIConfig({ apiUrl: url, model: mdl, apiKey: apiKey.trim() })
+      await saveAIConfig({ apiUrl: url, model: mdl, apiKey: key })
       setConfigured(true)
+      setStoredKey(key)
       setApiKey('')
       setMessage('配置已加密保存到本机浏览器，不会上传服务器')
     } catch (e) {
@@ -82,6 +87,7 @@ export default function AiConfigPanel() {
     clearAIConfig()
     setConfigured(false)
     setApiKey('')
+    setStoredKey('')
     setMessage(null)
     setError(null)
   }
