@@ -116,6 +116,27 @@ export default function AiConfigPanel() {
         </div>
 
         <div>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">API Key</label>
+          <div className="relative">
+            <input
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={configured ? '已加密保存（如需更换请输入新 Key）' : '请输入 API Key'}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 pr-10 text-sm outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              title={showKey ? '隐藏' : '显示'}
+            >
+              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div>
           <label className="mb-1 block text-xs font-semibold text-slate-600">模型</label>
           <div className="flex gap-2">
             <input
@@ -144,27 +165,6 @@ export default function AiConfigPanel() {
           <p className="mt-1 text-xs text-slate-400">
             模型列表来自 API 的 /models 接口实时获取，也可手动输入
           </p>
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">API Key</label>
-          <div className="relative">
-            <input
-              type={showKey ? 'text' : 'password'}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={configured ? '已加密保存（如需更换请输入新 Key）' : '请输入 API Key'}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 pr-10 text-sm outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              title={showKey ? '隐藏' : '显示'}
-            >
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
         </div>
       </div>
 
