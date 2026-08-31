@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { createElement, useEffect, useRef, useState, type ComponentType } from 'react'
 import { Link } from 'react-router-dom'
 import { Loader2, Send, Sparkles, X } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import 'katex/dist/katex.min.css'
 import { requestAI, type ChatMessage } from '../lib/ai'
 import { loadAIConfig } from '../lib/aiConfig'
 import type { Question } from '../types'
+
+type MarkdownComponent = ComponentType<{
+  children: string
+  remarkPlugins: unknown[]
+  rehypePlugins: unknown[]
+}>
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
@@ -64,7 +65,34 @@ export default function AiChatDialog({
   const [configMissing, setConfigMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imageWarning, setImageWarning] = useState<string | null>(null)
+  const [Markdown, setMarkdown] = useState<MarkdownComponent | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const [rm, gfm, math, katex] = await Promise.all([
+        import('react-markdown'),
+        import('remark-gfm'),
+        import('remark-math'),
+        import('rehype-katex'),
+      ])
+      await import('katex/dist/katex.min.css')
+      if (!alive) return
+      setMarkdown(
+        () =>
+          ((props) =>
+            createElement(rm.default, {
+              ...props,
+              remarkPlugins: [gfm.default, math.default],
+              rehypePlugins: [katex.default],
+            })) as MarkdownComponent,
+      )
+    })()
+    return () => {
+      alive = false
+    }
+  }, [])
 
   useEffect(() => {
     startInitial()
@@ -198,12 +226,13 @@ export default function AiChatDialog({
                 ) : (
                   <div key={i} className="flex justify-start">
                     <div className="markdown-body max-w-[90%] rounded-2xl rounded-bl-sm bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                      >
-                        {contentToText(m.content)}
-                      </ReactMarkdown>
+                      {Markdown ? (
+                        <Markdown remarkPlugins={[]} rehypePlugins={[]}>
+                          {contentToText(m.content)}
+                        </Markdown>
+                      ) : (
+                        <div className="whitespace-pre-wrap">{contentToText(m.content)}</div>
+                      )}
                     </div>
                   </div>
                 ),
