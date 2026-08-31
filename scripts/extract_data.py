@@ -26,8 +26,8 @@ ZIP_PATH = ROOT.parent / "无线电.zip"
 OUT_JSON = ROOT / "src" / "data" / "questions.json"
 OUT_FIG = ROOT / "public" / "figures"
 
-FIELD_TAGS = ("[P]", "[I]", "[Q]", "[T]", "[A]", "[B]", "[C]", "[D]")
-CONTENT_FIELDS = {"P", "I", "Q", "T", "A", "B", "C", "D"}
+FIELD_TAGS = ("[P]", "[I]", "[Q]", "[T]", "[A]", "[B]", "[C]", "[D]", "[F]")
+CONTENT_FIELDS = {"P", "I", "Q", "T", "A", "B", "C", "D", "F"}
 
 # 附图标记 PDF 中 OCR 文本的一处缺字修正（LK060 -> LK0603）
 LABEL_FIX = {"LK060": "LK0603"}
@@ -97,6 +97,7 @@ def finalize_question(cur: dict[str, str] | None) -> dict[str, Any] | None:
         "question": re.sub(r"\s+", " ", (cur.get("Q") or "").strip()),
         "options": options,
         "answer": answer,
+        "figureRaw": (cur.get("F") or "").strip(),
     }
 
 
@@ -199,7 +200,12 @@ def extract_figure_map() -> dict[str, str]:
 
 def add_figures(questions: list[dict[str, Any]], mapping: dict[str, str]) -> None:
     for q in questions:
-        q["figure"] = mapping.get(q["tag"], None)
+        raw = (q.pop("figureRaw", "") or "").strip()
+        if raw:
+            # [F] 标签形如 LK0506.jpg，统一转成 figures/ 路径
+            q["figure"] = f"figures/{raw}" if not raw.startswith("figures/") else raw
+        else:
+            q["figure"] = mapping.get(q["tag"], None)
 
 
 def main() -> None:

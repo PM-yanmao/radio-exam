@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Loader2, Send, Sparkles, X } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import { requestAI, type ChatMessage } from '../lib/ai'
 import { loadAIConfig } from '../lib/aiConfig'
 import type { Question } from '../types'
@@ -192,8 +197,13 @@ export default function AiChatDialog({
                   </div>
                 ) : (
                   <div key={i} className="flex justify-start">
-                    <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
-                      {contentToText(m.content)}
+                    <div className="markdown-body max-w-[90%] rounded-2xl rounded-bl-sm bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {contentToText(m.content)}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 ),
