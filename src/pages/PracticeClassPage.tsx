@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Layers, ListOrdered } from 'lucide-react'
-import { questionData } from '../data'
-import { classProgress } from '../lib/quiz'
+import { getClassMeta } from '../data'
 import { doneStore } from '../lib/storage'
 import type { ClassKey } from '../types'
 
@@ -46,10 +45,11 @@ export default function PracticeClassPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {CARDS.map((card) => {
-          const cls = questionData.classes[card.key]
-          const progress = classProgress(cls.questions, (id) => doneStore.has(id))
-          const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
-          const categories = new Set(cls.questions.map((q) => q.category)).size
+          const cls = getClassMeta(card.key)
+          const totalCount = cls.count
+          const doneCount = cls.items.filter((it) => doneStore.has(it.id)).length
+          const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0
+          const categories = new Set(cls.items.map((it) => it.category)).size
           return (
             <div
               key={card.key}
@@ -78,9 +78,9 @@ export default function PracticeClassPage() {
               </div>
               <p className="mt-3 text-sm text-slate-500">{card.desc}</p>
               <div className="mt-4 flex items-end justify-between">
-                <span className="text-3xl font-bold text-slate-900">{progress.total}</span>
+                <span className="text-3xl font-bold text-slate-900">{totalCount}</span>
                 <span className="text-xs text-slate-500">
-                  {progress.done} 已做 · {progress.undone} 未做 · {categories} 个类别
+                  {doneCount} 已做 · {totalCount - doneCount} 未做 · {categories} 个类别
                 </span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">

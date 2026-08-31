@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -10,7 +10,7 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react'
-import { getClass } from '../data'
+import { getClassMeta, loadBank } from '../data'
 import { EXAM_CONFIGS, formatClock, isAnswerCorrect, sampleExam } from '../lib/quiz'
 import { recordAnswer, saveHistory } from '../lib/storage'
 import type { ClassKey, ExamRecord, Question } from '../types'
@@ -27,17 +27,29 @@ interface ExamResult {
 export default function ExamPage() {
   const { classKey = 'A' } = useParams<{ classKey: ClassKey }>()
   const navigate = useNavigate()
-  const cls = getClass(classKey)
+  const clsMeta = classKey === 'all' ? undefined : getClassMeta(classKey)
   const config = EXAM_CONFIGS[classKey as Exclude<ClassKey, 'all'>]
+  const [questions, setQuestions] = useState<Question[] | null>(null)
 
-  const questions = useMemo<Question[]>(() => {
-    if (!cls || !config) return []
-    try {
-      return sampleExam(cls.questions, config)
-    } catch {
-      return []
+  useEffect(() => {
+    let alive = true
+    async function load() {
+      if (!clsMeta || !config) return
+      try {
+        const bank = await loadBank(classKey as Exclude<ClassKey, 'all'>)
+        if (!alive) return
+        setQuestions(sampleExam(bank, config))
+      } catch (e) {
+        console.error('考试题库加载失败', e)
+        if (alive) setQuestions([])
+      }
     }
-  }, [cls, config])
+    setQuestions(null)
+    void load()
+    return () => {
+      alive = false
+    }
+  }, [clsMeta, config, classKey])
 
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number[]>>({})
@@ -69,13 +81,20 @@ export default function ExamPage() {
   }, [submitted])
 
   useEffect(() => {
-    if (timeLeft === 0 && !submitted && questions.length > 0) {
+    if (timeLeft === 0 && !submitted && questions !== null && questions.length > 0) {
       finishExam(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft])
 
-  if (!cls || !config || classKey === 'all') return <Navigate to="/exam" replace />
+  if (!clsMeta || !config || classKey === 'all') return <Navigate to="/exam" replace />
+  if (questions === null) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
+        <p className="text-slate-500">正在组卷…</p>
+      </div>
+    )
+  }
   if (questions.length === 0) {
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
@@ -92,7 +111,7 @@ export default function ExamPage() {
   const answeredCount = Object.keys(answers).filter((k) => (answers[Number(k)] ?? []).length > 0).length
 
   function finishExam(auto: boolean) {
-    if (submitted) return
+    if (submitted || !questions || !clsMeta || !config) return
     let score = 0
     questions.forEach((question, i) => {
       const ok = isAnswerCorrect(answersRef.current[i] ?? [], question.answer)
@@ -104,7 +123,7 @@ export default function ExamPage() {
     const record: ExamRecord = {
       id: `${Date.now()}`,
       classKey: classKey as Exclude<ClassKey, 'all'>,
-      className: cls.name,
+      className: clsMeta.name,
       score,
       total: questions.length,
       passScore: config.passScore,
@@ -132,7 +151,7 @@ export default function ExamPage() {
         questions={questions}
         answers={answers}
         result={result}
-        className={cls.name}
+        className={clsMeta.name}
         passScore={config.passScore}
         onRetry={() => navigate(0)}
       />
@@ -155,7 +174,7 @@ export default function ExamPage() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-slate-900">{cls.name}模拟考试</h1>
+            <h1 className="text-lg font-bold text-slate-900">{clsMeta.name}模拟考试</h1>
             <p className="text-xs text-slate-500">
               已答 {answeredCount}/{questions.length} · 单选 {config.single} + 多选 {config.multi}
             </p>

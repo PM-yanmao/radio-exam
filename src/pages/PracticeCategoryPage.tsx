@@ -1,17 +1,57 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Shuffle, ListOrdered } from 'lucide-react'
-import { getClass, questionData } from '../data'
-import { classProgress, groupByCategory } from '../lib/quiz'
+import { getClassMeta, questionMeta } from '../data'
 import { doneStore } from '../lib/storage'
 import type { ClassKey } from '../types'
 
+interface CategoryStat {
+  category: string
+  chapter: string
+  total: number
+  done: number
+}
+
+interface ChapterGroup {
+  chapter: string
+  name: string
+  items: CategoryStat[]
+}
+
 export default function PracticeCategoryPage() {
   const { classKey } = useParams<{ classKey: ClassKey }>()
-  if (!classKey || !getClass(classKey)) return <Navigate to="/practice" replace />
+  const cls = classKey ? getClassMeta(classKey) : undefined
+  if (!cls) return <Navigate to="/practice" replace />
 
-  const cls = getClass(classKey)
-  const groups = groupByCategory(cls.questions, questionData.chapters, (id) => doneStore.has(id))
-  const overall = classProgress(cls.questions, (id) => doneStore.has(id))
+  const items = cls.items
+  const overallTotal = cls.count
+  const overallDone = items.filter((it) => doneStore.has(it.id)).length
+
+  const statMap = new Map<string, CategoryStat>()
+  for (const it of items) {
+    const stat = statMap.get(it.category) ?? {
+      category: it.category,
+      chapter: it.category.split('.')[0],
+      total: 0,
+      done: 0,
+    }
+    stat.total += 1
+    if (doneStore.has(it.id)) stat.done += 1
+    statMap.set(it.category, stat)
+  }
+
+  const chapterMap = new Map<string, CategoryStat[]>()
+  for (const stat of statMap.values()) {
+    const arr = chapterMap.get(stat.chapter) ?? []
+    arr.push(stat)
+    chapterMap.set(stat.chapter, arr)
+  }
+  const groups: ChapterGroup[] = [...chapterMap.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+    .map(([chapter, list]) => ({
+      chapter,
+      name: questionMeta.chapters[chapter] ?? `第${chapter}章`,
+      items: list.sort((a, b) => a.category.localeCompare(b.category, undefined, { numeric: true })),
+    }))
 
   return (
     <div className="space-y-5">
@@ -25,7 +65,7 @@ export default function PracticeCategoryPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900">{cls.name}</h1>
           <p className="text-xs text-slate-500">
-            {overall.total} 题 · 已做 {overall.done} · 未做 {overall.undone}
+            {overallTotal} 题 · 已做 {overallDone} · 未做 {overallTotal - overallDone}
           </p>
         </div>
       </header>
@@ -37,7 +77,7 @@ export default function PracticeCategoryPage() {
         <div>
           <p className="text-lg font-bold">全部题目</p>
           <p className="mt-0.5 text-sm text-indigo-200">
-            {overall.done} / {overall.total} 已做
+            {overallDone} / {overallTotal} 已做
           </p>
         </div>
         <div className="flex gap-2">
@@ -56,9 +96,7 @@ export default function PracticeCategoryPage() {
           </h2>
           <div className="grid gap-2 sm:grid-cols-2">
             {group.items.map((item) => {
-              const pct = item.questions.length
-                ? Math.round((item.done / item.questions.length) * 100)
-                : 0
+              const pct = item.total ? Math.round((item.done / item.total) * 100) : 0
               return (
                 <div
                   key={item.category}
@@ -69,10 +107,10 @@ export default function PracticeCategoryPage() {
                       <span className="font-mono text-sm font-bold text-slate-900">
                         {item.category}
                       </span>
-                      <span className="ml-2 text-xs text-slate-400">{item.questions.length} 题</span>
+                      <span className="ml-2 text-xs text-slate-400">{item.total} 题</span>
                     </div>
                     <span className="text-xs text-slate-500">
-                      {item.done}/{item.questions.length}
+                      {item.done}/{item.total}
                     </span>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">

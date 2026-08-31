@@ -23,6 +23,23 @@ export interface QuestionData {
   classes: Record<ClassKey, QuestionClass>
 }
 
+export interface QuestionMetaItem {
+  id: string
+  category: string
+}
+
+export interface ClassMeta {
+  name: string
+  count: number
+  items: QuestionMetaItem[]
+}
+
+export interface QuestionMeta {
+  generatedAt: string
+  chapters: Record<string, string>
+  classes: Record<ClassKey, ClassMeta>
+}
+
 export interface ExamRecord {
   id: string
   classKey: Exclude<ClassKey, 'all'>

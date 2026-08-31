@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { BookOpen, FileText, Home, RadioTower, Settings, XCircle } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { isInkEffective } from '../lib/settings'
 
 interface NavItem {
   to: string
@@ -18,8 +19,9 @@ const NAVS: NavItem[] = [
 ]
 
 export default function Layout() {
+  const ink = isInkEffective()
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className={`min-h-screen pb-20 md:pb-0 ${ink ? 'ink-mode' : ''}`}>
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <NavLink to="/" className="flex items-center gap-2 font-bold text-slate-900">

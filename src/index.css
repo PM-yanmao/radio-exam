@@ -219,3 +219,46 @@ body {
     background-color: rgb(238 242 255 / 0.4);
   }
 }
+
+/* ============ 墨水屏高对比模式 ============ */
+.ink-mode {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+.ink-mode * {
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-color: #444444 !important;
+  color: #000000 !important;
+}
+.ink-mode [class*="bg-gradient"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+.ink-mode [class*="text-white"],
+.ink-mode [class*="text-indigo-300"],
+.ink-mode [class*="text-indigo-200"],
+.ink-mode [class*="text-slate-300"],
+.ink-mode [class*="text-slate-400"],
+.ink-mode [class*="text-slate-500"] {
+  color: #000000 !important;
+}
+.ink-mode [class*="bg-slate-900"],
+.ink-mode [class*="bg-indigo-950"],
+.ink-mode [class*="bg-indigo-600"],
+.ink-mode [class*="bg-emerald-500"],
+.ink-mode [class*="bg-rose-500"] {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+.ink-mode [class*="h-1.5"] > div,
+.ink-mode [class*="h-2"] > div {
+  background-color: #000000 !important;
+  background-image: none !important;
+}
+.ink-mode [class*="h-1.5"],
+.ink-mode [class*="h-2"] {
+  background-color: #cccccc !important;
+  border: 1px solid #000000 !important;
+}

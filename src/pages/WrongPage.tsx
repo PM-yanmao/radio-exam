@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ListOrdered, Shuffle, Trash2 } from 'lucide-react'
-import { questionData } from '../data'
+import { getClassMeta, loadBank } from '../data'
 import { wrongStore } from '../lib/storage'
+import type { Question } from '../types'
 
 type Tab = 'all' | 'A' | 'B' | 'C'
 
@@ -16,18 +17,30 @@ const TABS: { key: Tab; label: string }[] = [
 export default function WrongPage() {
   const [tab, setTab] = useState<Tab>('all')
   const [version, setVersion] = useState(0)
+  const [allQuestions, setAllQuestions] = useState<Question[] | null>(null)
 
-  const allQuestions = questionData.classes.all.questions
+  useEffect(() => {
+    let alive = true
+    loadBank('all')
+      .then((bank) => {
+        if (alive) setAllQuestions(bank)
+      })
+      .catch((e) => console.error('错题题库加载失败', e))
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const wrongIds = useMemo(() => new Set(wrongStore.values()), [version]) // eslint-disable-line react-hooks/exhaustive-deps
   const classIds = useMemo(() => {
     const map = {} as Record<Exclude<Tab, 'all'>, Set<string>>
     for (const key of ['A', 'B', 'C'] as const) {
-      map[key] = new Set(questionData.classes[key].questions.map((q) => q.id))
+      map[key] = new Set(getClassMeta(key).items.map((it) => it.id))
     }
     return map
   }, [])
 
-  const list = allQuestions.filter((q) => {
+  const list = (allQuestions ?? []).filter((q) => {
     if (!wrongIds.has(q.id)) return false
     if (tab === 'all') return true
     return classIds[tab].has(q.id)
@@ -36,6 +49,14 @@ export default function WrongPage() {
   function remove(id: string) {
     wrongStore.remove(id)
     setVersion((v) => v + 1)
+  }
+
+  if (allQuestions === null) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
+        <p className="text-slate-500">错题集加载中…</p>
+      </div>
+    )
   }
 
   return (

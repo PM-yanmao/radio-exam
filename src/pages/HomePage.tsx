@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, CheckCircle2, Circle, Clock, FileText, XCircle } from 'lucide-react'
-import { questionData } from '../data'
-import { classProgress } from '../lib/quiz'
+import { getClassMeta, questionMeta } from '../data'
 import { doneStore, loadHistory, wrongStore } from '../lib/storage'
 import type { ClassKey } from '../types'
 
@@ -36,7 +35,7 @@ const CLASS_META: Record<
 }
 
 export default function HomePage() {
-  const total = questionData.classes.all.questions.length
+  const total = questionMeta.classes.all.count
   const done = doneStore.size
   const wrong = wrongStore.size
   const history = loadHistory()
@@ -64,9 +63,10 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {(Object.keys(CLASS_META) as ClassKey[]).map((key) => {
             const meta = CLASS_META[key]
-            const cls = questionData.classes[key]
-            const progress = classProgress(cls.questions, (id) => doneStore.has(id))
-            const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
+            const cls = getClassMeta(key)
+            const totalCount = cls.count
+            const doneCount = cls.items.filter((it) => doneStore.has(it.id)).length
+            const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0
             return (
               <div
                 key={key}
@@ -79,9 +79,9 @@ export default function HomePage() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">{meta.desc}</p>
                 <div className="mt-3 flex items-end justify-between">
-                  <span className="text-2xl font-bold text-slate-900">{progress.total}</span>
+                  <span className="text-2xl font-bold text-slate-900">{totalCount}</span>
                   <span className="text-xs text-slate-500">
-                    {progress.done}/{progress.total}
+                    {doneCount}/{totalCount}
                   </span>
                 </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">

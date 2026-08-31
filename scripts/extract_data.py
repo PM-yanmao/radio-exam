@@ -24,6 +24,8 @@ from pypdf.generic import ArrayObject
 ROOT = Path(__file__).resolve().parents[1]
 ZIP_PATH = ROOT.parent / "无线电.zip"
 OUT_JSON = ROOT / "src" / "data" / "questions.json"
+OUT_META = ROOT / "src" / "data" / "meta.json"
+OUT_BANKS = ROOT / "src" / "data" / "banks"
 OUT_FIG = ROOT / "public" / "figures"
 
 FIELD_TAGS = ("[P]", "[I]", "[Q]", "[T]", "[A]", "[B]", "[C]", "[D]", "[F]")
@@ -244,6 +246,27 @@ def main() -> None:
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     print(f"题库已写入：{OUT_JSON}")
+
+    # 拆分为 meta（轻量统计信息）+ 各类题库（按需加载）
+    meta_classes = {}
+    OUT_BANKS.mkdir(parents=True, exist_ok=True)
+    for key, cls in classes.items():
+        questions = cls["questions"]
+        meta_classes[key] = {
+            "name": cls["name"],
+            "count": len(questions),
+            "items": [{"id": q["id"], "category": q["category"]} for q in questions],
+        }
+        (OUT_BANKS / f"{key}.json").write_text(
+            json.dumps(questions, ensure_ascii=False), encoding="utf-8"
+        )
+    meta = {
+        "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "chapters": CHAPTERS,
+        "classes": meta_classes,
+    }
+    OUT_META.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+    print(f"meta 与分类题库已写入：{OUT_META} / {OUT_BANKS}")
 
 
 if __name__ == "__main__":

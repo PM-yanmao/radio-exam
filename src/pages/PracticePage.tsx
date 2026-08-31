@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -15,7 +15,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import AiChatDialog from '../components/AiChatDialog'
-import { getClass, questionData } from '../data'
+import { getClassMeta, loadBank } from '../data'
 import { isAnswerCorrect } from '../lib/quiz'
 import { getSheetStyle, type SheetStyle } from '../lib/settings'
 import { recordAnswer, wrongStore } from '../lib/storage'
@@ -32,17 +32,35 @@ export default function PracticePage() {
   const [searchParams] = useSearchParams()
   const urlMode: Mode = searchParams.get('mode') === 'shuffle' ? 'shuffle' : 'seq'
 
-  const cls = getClass(classKey)
-  const baseQuestions = useMemo<Question[]>(() => {
-    if (category === '__wrong__') {
-      const ids = new Set(wrongStore.values())
-      return questionData.classes.all.questions.filter((q) => ids.has(q.id))
+  const clsMeta = getClassMeta(classKey)
+  const [bank, setBank] = useState<Question[] | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    async function load() {
+      try {
+        if (category === '__wrong__') {
+          const ids = new Set(wrongStore.values())
+          const all = await loadBank('all')
+          if (alive) setBank(all.filter((q) => ids.has(q.id)))
+          return
+        }
+        const all = await loadBank(classKey)
+        if (!alive) return
+        setBank(category === 'all' ? all : all.filter((q) => q.category === category))
+      } catch (e) {
+        console.error('题库加载失败', e)
+        if (alive) setBank([])
+      }
     }
-    if (!cls) return []
-    return category === 'all'
-      ? cls.questions
-      : cls.questions.filter((q) => q.category === category)
-  }, [cls, category])
+    setBank(null)
+    void load()
+    return () => {
+      alive = false
+    }
+  }, [classKey, category])
+
+  const baseQuestions = bank ?? []
 
   const [mode, setMode] = useState<Mode>(urlMode)
   const [order, setOrder] = useState<number[]>([])
@@ -57,7 +75,7 @@ export default function PracticePage() {
   const [aiOpen, setAiOpen] = useState(false)
 
   useEffect(() => {
-    const n = baseQuestions.length
+    const n = (bank ?? []).length
     setMode(urlMode)
     setIndex(0)
     setAnswers({})
@@ -73,9 +91,16 @@ export default function PracticePage() {
         ? [Math.floor(Math.random() * Math.max(n, 1))]
         : Array.from({ length: n }, (_, i) => i),
     )
-  }, [baseQuestions, urlMode])
+  }, [bank, urlMode])
 
-  if (!cls) return <Navigate to="/practice" replace />
+  if (!clsMeta) return <Navigate to="/practice" replace />
+  if (bank === null) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
+        <p className="text-slate-500">题库加载中…</p>
+      </div>
+    )
+  }
   if (baseQuestions.length === 0) {
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
@@ -112,7 +137,7 @@ export default function PracticePage() {
   const title =
     category === '__wrong__'
       ? '错题重练'
-      : `${cls.name} · ${category === 'all' ? '全部题目' : category}`
+      : `${clsMeta.name} · ${category === 'all' ? '全部题目' : category}`
 
   if (finished) {
     const correctCount = Object.values(checks).filter(Boolean).length
