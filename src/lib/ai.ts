@@ -1,8 +1,12 @@
 import { loadAIConfig } from './aiConfig'
 
+export type ChatContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } }
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
-  content: string
+  content: string | ChatContentPart[]
 }
 
 export const AI_API_PRESETS: { name: string; url: string }[] = [
@@ -56,6 +60,60 @@ export class AINotConfiguredError extends Error {
     super('AI_NOT_CONFIGURED')
     this.name = 'AINotConfiguredError'
   }
+}
+
+const TINY_IMAGE =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+
+/**
+ * 通过发送一张 1x1 透明 GIF 探测模型是否支持图片输入。
+ * 返回 true=支持，false=服务端明确报错（视为不支持），null=网络等原因无法确认。
+ */
+export async function detectVisionSupport(
+  apiUrl: string,
+  apiKey: string,
+  model: string,
+): Promise<boolean | null> {
+  const base = apiUrl.trim().replace(/\/+$/, '')
+  let res: Response
+  try {
+    res = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Reply with OK' },
+              { type: 'image_url', image_url: { url: TINY_IMAGE } },
+            ],
+          },
+        ],
+        max_tokens: 1,
+        stream: false,
+      }),
+    })
+  } catch (e) {
+    console.error('视觉能力检测网络请求失败', e)
+    return null
+  }
+
+  if (res.ok) return true
+
+  let detail = ''
+  try {
+    const data = await res.json()
+    detail = data?.error?.message || JSON.stringify(data)
+  } catch {
+    detail = await res.text().catch(() => '')
+  }
+  console.error(`视觉能力检测失败（HTTP ${res.status}）`, detail)
+  return false
 }
 
 export async function requestAI(messages: ChatMessage[]): Promise<string> {

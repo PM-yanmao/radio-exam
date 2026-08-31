@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Eye, EyeOff, KeyRound, RefreshCw, Save, ShieldCheck } from 'lucide-react'
-import { AI_API_PRESETS, fetchModels } from '../lib/ai'
+import { AI_API_PRESETS, detectVisionSupport, fetchModels } from '../lib/ai'
 import { clearAIConfig, isAIConfiguredSync, loadAIConfig, saveAIConfig } from '../lib/aiConfig'
 
 export default function AiConfigPanel() {
@@ -15,6 +15,7 @@ export default function AiConfigPanel() {
   const [error, setError] = useState<string | null>(null)
   const [models, setModels] = useState<string[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
+  const [vision, setVision] = useState<boolean | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -25,6 +26,7 @@ export default function AiConfigPanel() {
         setModel(cfg.model)
         setConfigured(true)
         setStoredKey(cfg.apiKey)
+        setVision(cfg.vision)
         void loadModels(cfg.apiUrl, cfg.apiKey)
       }
     })
@@ -70,11 +72,19 @@ export default function AiConfigPanel() {
     }
     setSaving(true)
     try {
-      await saveAIConfig({ apiUrl: url, model: mdl, apiKey: key })
+      const visionResult = await detectVisionSupport(url, key, mdl)
+      await saveAIConfig({ apiUrl: url, model: mdl, apiKey: key, vision: visionResult })
       setConfigured(true)
       setStoredKey(key)
       setApiKey('')
-      setMessage('配置已加密保存到本机浏览器，不会上传服务器')
+      setVision(visionResult)
+      const visionText =
+        visionResult === true
+          ? '模型支持图片，AI 可查看题目附图'
+          : visionResult === false
+            ? '模型不支持图片，带图题目将提示图片缺失'
+            : '未能确认模型视觉能力，带图题目将按不支持图片处理'
+      setMessage(`配置已加密保存到本机浏览器；${visionText}`)
     } catch (e) {
       console.error(e)
       setError(e instanceof Error ? e.message : '保存失败')
@@ -195,13 +205,24 @@ export default function AiConfigPanel() {
         )}
       </div>
 
-      <div
-        className={`mt-3 flex items-center gap-1.5 text-xs font-medium ${
-          configured ? 'text-emerald-600' : 'text-amber-600'
-        }`}
-      >
-        <ShieldCheck className="h-4 w-4" />
-        {configured ? '已配置，刷题页 AI 解答可用' : '未配置，AI 解答将引导你到这里完成配置'}
+      <div className="mt-3 space-y-1">
+        <div
+          className={`flex items-center gap-1.5 text-xs font-medium ${
+            configured ? 'text-emerald-600' : 'text-amber-600'
+          }`}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          {configured ? '已配置，刷题页 AI 解答可用' : '未配置，AI 解答将引导你到这里完成配置'}
+        </div>
+        {configured && (
+          <p className="text-xs text-slate-500">
+            {vision === true
+              ? '视觉能力：支持图片，可解析题目附图'
+              : vision === false
+                ? '视觉能力：不支持图片，带图题目将提示图片缺失'
+                : '视觉能力：未检测，带图题目将按不支持图片处理'}
+          </p>
+        )}
       </div>
     </div>
   )

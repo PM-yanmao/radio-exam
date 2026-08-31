@@ -27,6 +27,25 @@ function buildInitialMessage(q: Question): string {
   ].join('\n')
 }
 
+function contentToText(content: ChatMessage['content']): string {
+  if (typeof content === 'string') return content
+  return content
+    .map((part) => (part.type === 'text' ? part.text : '[题目附图]'))
+    .join('\n')
+}
+
+async function figureToDataUrl(path: string): Promise<string> {
+  const res = await fetch(`${import.meta.env.BASE_URL}${path}`)
+  if (!res.ok) throw new Error(`附图加载失败（HTTP ${res.status}）`)
+  const blob = await res.blob()
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('附图读取失败'))
+    reader.readAsDataURL(blob)
+  })
+}
+
 export default function AiChatDialog({
   question,
   onClose,
@@ -39,6 +58,7 @@ export default function AiChatDialog({
   const [loading, setLoading] = useState(false)
   const [configMissing, setConfigMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [imageWarning, setImageWarning] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -56,7 +76,34 @@ export default function AiChatDialog({
       setConfigMissing(true)
       return
     }
-    const user: ChatMessage = { role: 'user', content: buildInitialMessage(question) }
+
+    const text = buildInitialMessage(question)
+    let content: ChatMessage['content'] = text
+
+    if (question.figure) {
+      if (config.vision === true) {
+        try {
+          const dataUrl = await figureToDataUrl(question.figure)
+          content = [
+            { type: 'text', text },
+            { type: 'image_url', image_url: { url: dataUrl } },
+          ]
+        } catch (e) {
+          console.error('附图转换失败', e)
+          content = `${text}\n\n[本题含附图，但附图加载失败，AI 无法查看图片]`
+          setImageWarning('题目附图加载失败，本次 AI 将看不到图片')
+        }
+      } else {
+        content = `${text}\n\n[本题含附图，但当前模型不支持图片输入，AI 无法查看图片]`
+        setImageWarning(
+          config.vision === false
+            ? '当前模型不支持图片，AI 无法查看题目附图'
+            : '未能确认当前模型是否支持图片，已按不支持处理，AI 无法查看题目附图',
+        )
+      }
+    }
+
+    const user: ChatMessage = { role: 'user', content }
     setMessages([user])
     setLoading(true)
     try {
@@ -129,17 +176,24 @@ export default function AiChatDialog({
             </div>
           ) : (
             <>
+              {imageWarning && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  <p className="font-semibold">图片提示</p>
+                  <p className="mt-1 text-xs leading-relaxed opacity-90">{imageWarning}</p>
+                </div>
+              )}
+
               {messages.map((m, i) =>
                 m.role === 'user' ? (
                   <div key={i} className="flex justify-end">
                     <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-indigo-600 px-4 py-2.5 text-sm leading-relaxed text-white">
-                      {m.content}
+                      {contentToText(m.content)}
                     </div>
                   </div>
                 ) : (
                   <div key={i} className="flex justify-start">
                     <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
-                      {m.content}
+                      {contentToText(m.content)}
                     </div>
                   </div>
                 ),

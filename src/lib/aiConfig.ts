@@ -2,6 +2,7 @@ export interface AIConfig {
   apiUrl: string
   model: string
   apiKey: string
+  vision: boolean | null
 }
 
 interface EncryptedKey {
@@ -12,6 +13,7 @@ interface EncryptedKey {
 interface StoredAIConfig {
   apiUrl: string
   model: string
+  vision?: boolean | null
   key: EncryptedKey
 }
 
@@ -118,6 +120,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
     const stored: StoredAIConfig = {
       apiUrl: config.apiUrl.trim(),
       model: config.model.trim(),
+      vision: config.vision ?? null,
       key: enc,
     }
     localStorage.setItem(CONFIG_KEY, JSON.stringify(stored))
@@ -148,7 +151,12 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
       if (!key) return null
       const apiKey = await decryptText(parsed.key, key)
       if (!apiKey) return null
-      return { apiUrl: parsed.apiUrl, model: parsed.model, apiKey }
+      return {
+        apiUrl: parsed.apiUrl,
+        model: parsed.model,
+        apiKey,
+        vision: typeof parsed.vision === 'boolean' ? parsed.vision : null,
+      }
     } finally {
       db.close()
     }
