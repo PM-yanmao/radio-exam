@@ -17,10 +17,9 @@ export const AI_API_PRESETS: { name: string; url: string }[] = [
 export const AI_MODEL_PRESETS: string[] = [
   'gpt-4o-mini',
   'gpt-4o',
-  'deepseek-chat',
-  'deepseek-reasoner',
   'deepseek-v4-flash',
   'deepseek-v4-pro',
+  'deepseek-v4-flash-vision-exp',
   'moonshot-v1-8k',
   'glm-4-flash',
   'qwen-turbo',
