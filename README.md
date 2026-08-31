@@ -1,0 +1,67 @@
+# 业余无线电考试题库（刷题 + 模拟考试）
+
+基于《业余无线电台操作技术能力验证题库》的静态单页应用，适配 PC 与手机双端。
+
+## 功能
+
+- **分类刷题**：按 A / B / C / 全部题库 → 章节类别逐题练习，支持 **顺序** 与 **乱序** 模式，逐题作答 + 答题卡导航，作答后即时反馈正确答案。
+- **错题集**：答错的题自动收录，支持按类别筛选、顺序/乱序重练、手动移除。
+- **进度统计**：首页与类别页展示每个题库/类别的已做、未做、总题数，进度实时保存。
+- **模拟考试**：严格按规则组卷与判分：
+  | 考试 | 抽题规则 | 时间 | 合格线 |
+  | --- | --- | --- | --- |
+  | A 类 | 40 题（32 单选 + 8 多选） | 40 分钟 | 答对 30 题 |
+  | B 类 | 60 题（45 单选 + 15 多选） | 60 分钟 | 答对 45 题 |
+  | C 类 | 90 题（70 单选 + 20 多选） | 90 分钟 | 答对 70 题 |
+  倒计时、答题卡、交卷确认、超时自动交卷、成绩与逐题回顾、考试记录保存。
+- **数据本地存储**：学习进度、错题集、考试记录保存在浏览器 localStorage，无需后端。
+
+## 技术栈
+
+Vite + React + TypeScript + Tailwind CSS（React Router + lucide-react）
+
+## 快速开始
+
+```bash
+npm install
+npm run dev      # 开发服务器
+npm run build    # 构建到 dist/
+npm run preview  # 预览构建产物
+```
+
+构建产物为纯静态文件，可直接部署到任意静态托管（如 GitHub Pages、Nginx、对象存储）。
+
+## 题库数据
+
+- 题库 JSON：`src/data/questions.json`（A 类 683 题、B 类 1143 题、C 类 1282 题、全部并集 1375 题）
+- 题目附图：`public/figures/*.jpg`（53 张，按题目 `[J]` 标签命名）
+
+如需从 PDF 重新生成数据（需 Python 3 与 `pypdf`）：
+
+```bash
+pip install pypdf
+python scripts/extract_data.py
+```
+
+数据来源为根目录下的 `无线电.zip`（含 A/B/C 类题库 PDF 与附图标记 PDF）。
+
+## 判分规则
+
+- 单选题：选项完全一致得分。
+- 多选题：必须全部选对得分，漏选、多选、错选均不得分。
+
+## 目录结构
+
+```
+radio-exam/
+├─ index.html
+├─ package.json
+├─ vite.config.ts
+├─ scripts/extract_data.py   # PDF -> JSON/附图 提取脚本
+├─ public/figures/           # 题目附图
+└─ src/
+   ├─ data/questions.json    # 题库数据
+   ├─ lib/                   # 存储、抽题、判分工具
+   ├─ components/            # 布局组件
+   └─ pages/                 # 首页/刷题/错题/考试页面
+```
