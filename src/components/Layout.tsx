@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BookOpen, FileText, Home, RadioTower, XCircle } from 'lucide-react'
+import { BookOpen, FileText, Home, RadioTower, Settings, XCircle } from 'lucide-react'
 import type { ComponentType } from 'react'
 
 interface NavItem {
@@ -14,6 +14,7 @@ const NAVS: NavItem[] = [
   { to: '/practice', label: '刷题', icon: BookOpen },
   { to: '/wrong', label: '错题集', icon: XCircle },
   { to: '/exam', label: '模拟考试', icon: FileText },
+  { to: '/config', label: '配置', icon: Settings },
 ]
 
 export default function Layout() {
@@ -54,7 +55,7 @@ export default function Layout() {
       </main>
 
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {NAVS.map((item) => (
             <NavLink
               key={item.to}

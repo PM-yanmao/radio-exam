@@ -117,10 +117,10 @@ export default function AiChatDialog({
               <p className="text-2xl">🤖</p>
               <p className="mt-2 text-sm font-semibold text-slate-700">尚未配置 AI 服务</p>
               <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                请先在「模拟考试」页右侧的 AI 配置面板中填写 API 地址、模型和 API Key，再回来使用 AI 解析。
+                请先在顶部导航的「配置」页中填写 API 地址、模型和 API Key，再回来使用 AI 解析。
               </p>
               <Link
-                to="/exam"
+                to="/config"
                 onClick={onClose}
                 className="mt-4 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
               >
