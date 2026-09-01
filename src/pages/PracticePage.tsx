@@ -17,7 +17,7 @@ import {
 import AiChatDialog from '../components/AiChatDialog'
 import { getClassMeta, loadBank } from '../data'
 import { isAnswerCorrect } from '../lib/quiz'
-import { getSheetStyle, isInkEffective, type SheetStyle } from '../lib/settings'
+import { getSheetStyle, type SheetStyle } from '../lib/settings'
 import { recordAnswer, wrongStore } from '../lib/storage'
 import type { ClassKey, Question } from '../types'
 
@@ -127,7 +127,6 @@ export default function PracticePage() {
   const correctLetters = q.answer.map((i) => LETTERS[i]).join('、')
   const answeredCount = Object.keys(checks).length
   const total = baseQuestions.length
-  const ink = isInkEffective()
   const remainingCount = total - answeredCount
   const backTo =
     category === '__wrong__'
@@ -353,11 +352,6 @@ export default function PracticePage() {
                 onClick={() => toggleOption(oi)}
                 disabled={revealed}
                 className={`option-enter flex w-full items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all ${clsName}`}
-                style={
-                  ink && isSel && !revealed
-                    ? { backgroundColor: '#000000', color: '#ffffff', borderColor: '#000000' }
-                    : undefined
-                }
               >
                 <span
                   className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
@@ -369,11 +363,6 @@ export default function PracticePage() {
                           : 'bg-indigo-500 text-white'
                       : 'bg-slate-100 text-slate-500'
                   }`}
-                  style={
-                    ink && isSel && !revealed
-                      ? { backgroundColor: '#ffffff', color: '#000000' }
-                      : undefined
-                  }
                 >
                   {LETTERS[oi]}
                 </span>

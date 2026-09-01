@@ -220,20 +220,28 @@ body {
   }
 }
 
-/* ============ 墨水屏高对比模式（精确覆盖，不影响彩色模式） ============ */
+/* ============ 墨水屏高对比模式 ============ */
+/* 白底黑字，全局统一文字颜色，保证可读 */
 .ink-mode {
   background: #ffffff !important;
   color: #000000 !important;
 }
-.ink-mode [class*="bg-gradient"] {
-  background-color: #ffffff !important;
-  background-image: none !important;
-}
-.ink-mode [class*="bg-gradient"] [class*="text-white"],
-.ink-mode [class*="bg-gradient"] [class*="text-indigo-300"],
-.ink-mode [class*="bg-gradient"] [class*="text-indigo-200"] {
+.ink-mode * {
   color: #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
+/* 所有渐变/深色背景统一改为白底，文字由全局规则变黑 */
+.ink-mode [class*="bg-gradient"],
+.ink-mode [class*="bg-slate-900"],
+.ink-mode [class*="bg-indigo-950"],
+.ink-mode [class*="bg-indigo-900"],
+.ink-mode [class*="bg-indigo-600"],
+.ink-mode [class*="bg-slate-700"] {
+  background-color: #ffffff !important;
+}
+/* 进度条：底色浅灰，填充纯黑 */
 .ink-mode [class*="h-1.5"] > div,
 .ink-mode [class*="h-2"] > div {
   background-color: #000000 !important;
@@ -245,27 +253,39 @@ body {
   border: 1px solid #000000 !important;
 }
 
-/* 墨水屏选中项：反色实心，与未选中项明确区分 */
-.ink-mode button[class*="border-indigo-500"] {
+/* ============ 墨水屏选中项：反色实心（放在最后，覆盖全局） ============ */
+/* 刷题/考试选项按钮：整块黑底，所有文字白色 */
+.ink-mode button[class*="border-indigo-500"],
+.ink-mode button[class*="border-indigo-500"] * {
   background-color: #000000 !important;
   color: #ffffff !important;
 }
-.ink-mode button[class*="border-indigo-500"] > span {
+/* 选项字母圈：白底黑字，突出显示 */
+.ink-mode button[class*="border-indigo-500"] > span:first-child {
   background-color: #ffffff !important;
   color: #000000 !important;
 }
+/* 答题卡已答/选项字母圈等 indigo-500 背景：黑底白字 */
 .ink-mode [class*="bg-indigo-500"] {
   background-color: #000000 !important;
   color: #ffffff !important;
 }
-.ink-mode ul li button[class*="bg-indigo-50"] {
+.ink-mode [class*="bg-indigo-500"] * {
+  color: #ffffff !important;
+}
+/* ComboBox 下拉选中项：黑底白字 */
+.ink-mode ul li button[class*="bg-indigo-50"],
+.ink-mode ul li button[class*="bg-indigo-50"] * {
   background-color: #000000 !important;
   color: #ffffff !important;
 }
-.ink-mode button[class*="border-black"] {
+/* 配置页「墨水屏/答题卡样式」选中卡片：黑底白字 */
+.ink-mode button[class*="border-black"],
+.ink-mode button[class*="border-black"] * {
   background-color: #000000 !important;
   color: #ffffff !important;
 }
+/* 当前题答题卡选中环：黑色 */
 .ink-mode [class*="ring-indigo-500"] {
   --tw-ring-color: #000000 !important;
 }
