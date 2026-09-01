@@ -6,8 +6,9 @@ export interface AIConfig {
 }
 
 interface EncryptedKey {
-  iv: string
-  data: string
+  iv?: string
+  data?: string
+  base64?: string
 }
 
 interface StoredAIConfig {
@@ -104,7 +105,7 @@ async function encryptText(plain: string, key: CryptoKey): Promise<EncryptedKey>
   return { iv: bufToB64(iv), data: bufToB64(data) }
 }
 
-async function decryptText(enc: EncryptedKey, key: CryptoKey): Promise<string> {
+async function decryptText(enc: { iv: string; data: string }, key: CryptoKey): Promise<string> {
   const data = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: b64ToBuf(enc.iv) },
     key,
@@ -113,10 +114,36 @@ async function decryptText(enc: EncryptedKey, key: CryptoKey): Promise<string> {
   return new TextDecoder().decode(data)
 }
 
+export function isSecureContextAvailable(): boolean {
+  return typeof crypto !== 'undefined' && !!crypto.subtle
+}
+
+function encodeB64(text: string): string {
+  const bytes = new TextEncoder().encode(text)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+  return btoa(bin)
+}
+
+function decodeB64(b64: string): string {
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new TextDecoder().decode(bytes)
+}
+
 export async function saveAIConfig(config: AIConfig): Promise<void> {
   try {
-    const key = await getOrCreateKey()
-    const enc = await encryptText(config.apiKey, key)
+    let enc: EncryptedKey
+    if (isSecureContextAvailable()) {
+      const key = await getOrCreateKey()
+      enc = await encryptText(config.apiKey, key)
+    } else {
+      console.warn(
+        '当前页面不是安全上下文（HTTP），crypto.subtle 不可用，API Key 将以 Base64 编码保存。强烈建议使用 HTTPS 访问。',
+      )
+      enc = { base64: encodeB64(config.apiKey) }
+    }
     const stored: StoredAIConfig = {
       apiUrl: config.apiUrl.trim(),
       model: config.model.trim(),
@@ -140,25 +167,37 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
       typeof parsed.apiUrl !== 'string' ||
       typeof parsed.model !== 'string' ||
       !parsed.key ||
-      typeof parsed.key.iv !== 'string' ||
-      typeof parsed.key.data !== 'string'
+      (typeof parsed.key.base64 !== 'string' &&
+        (typeof parsed.key.iv !== 'string' || typeof parsed.key.data !== 'string'))
     ) {
       return null
     }
-    const db = await openDb()
-    try {
-      const key = await idbGet(db, KEY_ID)
-      if (!key) return null
-      const apiKey = await decryptText(parsed.key, key)
-      if (!apiKey) return null
-      return {
-        apiUrl: parsed.apiUrl,
-        model: parsed.model,
-        apiKey,
-        vision: typeof parsed.vision === 'boolean' ? parsed.vision : null,
+    let apiKey: string
+    if (typeof parsed.key.base64 === 'string') {
+      apiKey = decodeB64(parsed.key.base64)
+    } else {
+      if (!isSecureContextAvailable()) {
+        console.warn('当前页面不是安全上下文，无法解密已加密的 API Key。请使用 HTTPS 访问。')
+        return null
       }
-    } finally {
-      db.close()
+      const db = await openDb()
+      try {
+        const key = await idbGet(db, KEY_ID)
+        if (!key) return null
+        apiKey = await decryptText(
+          { iv: parsed.key.iv as string, data: parsed.key.data as string },
+          key,
+        )
+      } finally {
+        db.close()
+      }
+      if (!apiKey) return null
+    }
+    return {
+      apiUrl: parsed.apiUrl,
+      model: parsed.model,
+      apiKey,
+      vision: typeof parsed.vision === 'boolean' ? parsed.vision : null,
     }
   } catch (e) {
     console.error('读取 AI 配置失败', e)

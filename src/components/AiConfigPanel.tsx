@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Eye, EyeOff, KeyRound, RefreshCw, Save, ShieldCheck } from 'lucide-react'
 import { AI_API_PRESETS, detectVisionSupport, fetchModels } from '../lib/ai'
 import ComboBox from './ComboBox'
-import { clearAIConfig, isAIConfiguredSync, loadAIConfig, saveAIConfig } from '../lib/aiConfig'
+import { clearAIConfig, isAIConfiguredSync, isSecureContextAvailable, loadAIConfig, saveAIConfig } from '../lib/aiConfig'
 
 export default function AiConfigPanel() {
   const [apiUrl, setApiUrl] = useState('')
@@ -85,7 +85,11 @@ export default function AiConfigPanel() {
           : visionResult === false
             ? '模型不支持图片，带图题目将提示图片缺失'
             : '未能确认模型视觉能力，带图题目将按不支持图片处理'
-      setMessage(`配置已加密保存到本机浏览器；${visionText}`)
+      const secure = isSecureContextAvailable()
+      const secureText = secure
+        ? '已使用 AES-GCM 加密'
+        : '当前为 HTTP 非安全环境，Key 仅以 Base64 编码保存（可被解码），强烈建议使用 HTTPS'
+      setMessage(`配置已保存到本机浏览器（${secureText}）；${visionText}`)
     } catch (e) {
       console.error(e)
       setError(e instanceof Error ? e.message : '保存失败')
