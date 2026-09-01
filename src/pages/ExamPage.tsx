@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { getClassMeta, loadBank } from '../data'
 import { EXAM_CONFIGS, formatClock, isAnswerCorrect, sampleExam } from '../lib/quiz'
+import { isInkEffective } from '../lib/settings'
 import { recordAnswer, saveHistory } from '../lib/storage'
 import type { ClassKey, ExamRecord, Question } from '../types'
 
@@ -108,6 +109,7 @@ export default function ExamPage() {
 
   const q = questions[index]
   const selected = answers[index] ?? []
+  const ink = isInkEffective()
   const answeredCount = Object.keys(answers).filter((k) => (answers[Number(k)] ?? []).length > 0).length
 
   function finishExam(auto: boolean) {
@@ -234,11 +236,21 @@ export default function ExamPage() {
                     ? 'border-indigo-500 bg-indigo-50'
                     : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/40'
                 }`}
+                style={
+                  ink && isSel
+                    ? { backgroundColor: '#000000', color: '#ffffff', borderColor: '#000000' }
+                    : undefined
+                }
               >
                 <span
                   className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
                     isSel ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500'
                   }`}
+                  style={
+                    ink && isSel
+                      ? { backgroundColor: '#ffffff', color: '#000000' }
+                      : undefined
+                  }
                 >
                   {LETTERS[oi]}
                 </span>

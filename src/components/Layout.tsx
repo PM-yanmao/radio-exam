@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { BookOpen, FileText, Home, RadioTower, Settings, XCircle } from 'lucide-react'
-import type { ComponentType } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { isInkEffective } from '../lib/settings'
 
 interface NavItem {
@@ -19,7 +19,18 @@ const NAVS: NavItem[] = [
 ]
 
 export default function Layout() {
-  const ink = isInkEffective()
+  const [ink, setInk] = useState(() => isInkEffective())
+
+  useEffect(() => {
+    const update = () => setInk(isInkEffective())
+    window.addEventListener('radio-ink-change', update)
+    window.addEventListener('storage', update)
+    return () => {
+      window.removeEventListener('radio-ink-change', update)
+      window.removeEventListener('storage', update)
+    }
+  }, [])
+
   return (
     <div className={`min-h-screen pb-20 md:pb-0 ${ink ? 'ink-mode' : ''}`}>
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur">

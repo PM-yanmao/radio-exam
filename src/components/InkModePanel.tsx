@@ -14,6 +14,7 @@ export default function InkModePanel() {
   function choose(value: InkMode) {
     setInkMode(value)
     setMode(value)
+    window.dispatchEvent(new CustomEvent('radio-ink-change'))
   }
 
   return (
@@ -33,6 +34,9 @@ export default function InkModePanel() {
               className={`flex items-start gap-2 rounded-2xl border-2 p-3 text-left transition-colors ${
                 active ? 'border-black bg-slate-100' : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
+              style={
+                active ? { backgroundColor: '#000000', color: '#ffffff' } : undefined
+              }
             >
               <Icon className={`mt-0.5 h-4 w-4 ${active ? 'text-black' : 'text-slate-400'}`} />
               <span>
