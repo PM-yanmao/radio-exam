@@ -1,6 +1,6 @@
 # 业余无线电考试题库（刷题 + 模拟考试）
 
-基于《业余无线电台操作技术能力验证题库》的静态单页应用，适配 PC 与手机双端。
+基于《业余无线电台操作技术能力验证题库》的静态单页应用，适配 PC 与手机双端。由AI制作。
 
 ## 功能
 
@@ -36,14 +36,6 @@ npm run preview  # 预览构建产物
 - 题库 JSON：`src/data/questions.json`（A 类 683 题、B 类 1143 题、C 类 1282 题、全部并集 1375 题）
 - 题目附图：`public/figures/*.jpg`（53 张，按题目 `[J]` 标签命名）
 
-如需从 PDF 重新生成数据（需 Python 3 与 `pypdf`）：
-
-```bash
-pip install pypdf
-python scripts/extract_data.py
-```
-
-数据来源为根目录下的 `无线电.zip`（含 A/B/C 类题库 PDF 与附图标记 PDF）。
 
 ## 判分规则
 
