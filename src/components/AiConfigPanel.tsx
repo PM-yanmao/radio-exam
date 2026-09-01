@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Eye, EyeOff, KeyRound, RefreshCw, Save, ShieldCheck } from 'lucide-react'
 import { AI_API_PRESETS, detectVisionSupport, fetchModels } from '../lib/ai'
+import ComboBox from './ComboBox'
 import { clearAIConfig, isAIConfiguredSync, loadAIConfig, saveAIConfig } from '../lib/aiConfig'
 
 export default function AiConfigPanel() {
@@ -115,20 +116,16 @@ export default function AiConfigPanel() {
       <div className="mt-4 space-y-3">
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-600">API 地址</label>
-          <input
-            list="ai-api-presets"
+          <ComboBox
             value={apiUrl}
-            onChange={(e) => setApiUrl(e.target.value)}
+            onChange={setApiUrl}
+            options={AI_API_PRESETS.map((p) => ({
+              value: p.url,
+              label: `${p.name} · ${p.url}`,
+            }))}
             placeholder="选择或输入 API 地址"
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            inputMode="url"
           />
-          <datalist id="ai-api-presets">
-            {AI_API_PRESETS.map((p) => (
-              <option key={p.url} value={p.url}>
-                {p.name}
-              </option>
-            ))}
-          </datalist>
         </div>
 
         <div>
@@ -155,12 +152,11 @@ export default function AiConfigPanel() {
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-600">模型</label>
           <div className="flex gap-2">
-            <input
-              list="ai-model-options"
+            <ComboBox
               value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="点击右侧按钮获取模型列表，或手动输入"
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              onChange={setModel}
+              options={models.map((m) => ({ value: m, label: m }))}
+              placeholder="选择模型或手动输入"
             />
             <button
               type="button"
@@ -173,11 +169,6 @@ export default function AiConfigPanel() {
               获取模型
             </button>
           </div>
-          <datalist id="ai-model-options">
-            {models.map((m) => (
-              <option key={m} value={m} />
-            ))}
-          </datalist>
           <p className="mt-1 text-xs text-slate-400">
             模型列表来自 API 的 /models 接口实时获取，也可手动输入
           </p>
